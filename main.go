@@ -15,7 +15,6 @@ import (
 	"github.com/dghubble/oauth1"
 	"github.com/julianshen/og"
 	"github.com/shah/content-harvester-utils"
-	"mvdan.cc/xurls"
 )
 
 // TODO use https://www.lukemorton.co.uk/thoughts/2017-01-15-deploying-go-on-zeit-now to figure
@@ -122,7 +121,7 @@ func main() {
 	httpClient := config.Client(oauth1.NoContext, token)
 
 	client := twitter.NewClient(httpClient)
-	contentHarvester := harvester.MakeContentHarvester(xurls.Relaxed(), ignoreURLsRegEx, removeParamsFromURLsRegEx)
+	contentHarvester := harvester.MakeContentHarvester(ignoreURLsRegEx, removeParamsFromURLsRegEx)
 
 	demux := twitter.NewSwitchDemux()
 	demux.Tweet = func(tweet *twitter.Tweet) {
