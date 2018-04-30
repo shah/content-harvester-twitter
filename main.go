@@ -76,7 +76,7 @@ func (l cleanURLsRegExList) CleanDiscoveredResource(url *url.URL) bool {
 func (l cleanURLsRegExList) RemoveQueryParamFromResource(paramName string) (bool, string) {
 	for _, regEx := range l {
 		if regEx.MatchString(paramName) {
-			return true, fmt.Sprintf("Matched rule %s", regEx.String())
+			return true, fmt.Sprintf("Matched cleaner rule `%s`", regEx.String())
 		}
 	}
 
@@ -148,7 +148,7 @@ func main() {
 		}
 	}
 
-	fmt.Println("Starting Stream...")
+	fmt.Println("Starting Twitter Stream...")
 	fmt.Println(filterTrackItems)
 	filterParams := &twitter.StreamFilterParams{
 		// TODO add command line option to read trackers from Lectio Campaign and other sources
@@ -168,6 +168,6 @@ func main() {
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	log.Println(<-ch)
 
-	fmt.Println("Stopping Stream...")
+	fmt.Println("Stopping Twitter Stream...")
 	stream.Stop()
 }
