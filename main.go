@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"os/signal"
 	"regexp"
@@ -21,7 +22,8 @@ import (
 // how to run this on Zeit (like Node.js versions)
 
 type textList []string
-type regExList []*regexp.Regexp
+type ignoreURLsRegExList []*regexp.Regexp
+type cleanURLsRegExList []*regexp.Regexp
 
 func (i *textList) String() string {
 	return ""
@@ -34,22 +36,58 @@ func (i *textList) Set(value string) error {
 	return nil
 }
 
-func (i *regExList) String() string {
+func (l *ignoreURLsRegExList) String() string {
 	return ""
 }
 
-func (i *regExList) Set(value string) error {
+func (l *ignoreURLsRegExList) Set(value string) error {
 	if value != "" {
-		*i = append(*i, regexp.MustCompile(value))
+		*l = append(*l, regexp.MustCompile(value))
 	}
 	return nil
+}
+
+func (l ignoreURLsRegExList) IgnoreDiscoveredResource(url *url.URL) (bool, string) {
+	URLtext := url.String()
+	for _, regEx := range l {
+		if regEx.MatchString(URLtext) {
+			return true, fmt.Sprintf("Matched Ignore Rule `%s`", regEx.String())
+		}
+	}
+	return false, ""
+}
+
+func (l *cleanURLsRegExList) String() string {
+	return ""
+}
+
+func (l *cleanURLsRegExList) Set(value string) error {
+	if value != "" {
+		*l = append(*l, regexp.MustCompile(value))
+	}
+	return nil
+}
+
+func (l cleanURLsRegExList) CleanDiscoveredResource(url *url.URL) bool {
+	// we try to clean all URLs, not specific ones
+	return true
+}
+
+func (l cleanURLsRegExList) RemoveQueryParamFromResource(paramName string) (bool, string) {
+	for _, regEx := range l {
+		if regEx.MatchString(paramName) {
+			return true, fmt.Sprintf("Matched rule %s", regEx.String())
+		}
+	}
+
+	return false, ""
 }
 
 func main() {
 	// TODO add ability to configure hooks or GraphQL subscriptions for outbound event calls
 	var filterTrackItems textList
-	var ignoreURLsRegEx regExList
-	var removeParamsFromURLsRegEx regExList
+	var ignoreURLsRegEx ignoreURLsRegExList
+	var removeParamsFromURLsRegEx cleanURLsRegExList
 
 	flags := flag.NewFlagSet("options", flag.ExitOnError)
 	consumerKey := flags.String("consumer-key", "", "Twitter Consumer Key")
