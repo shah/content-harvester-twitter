@@ -17,6 +17,9 @@ import (
 	"mvdan.cc/xurls"
 )
 
+// TODO use https://www.lukemorton.co.uk/thoughts/2017-01-15-deploying-go-on-zeit-now to figure
+// how to run this on Zeit (like Node.js versions)
+
 type textList []string
 type regExList []*regexp.Regexp
 
