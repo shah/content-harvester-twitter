@@ -82,9 +82,32 @@ func (l cleanURLsRegExList) RemoveQueryParamFromResource(paramName string) (bool
 	return false, ""
 }
 
+func handleTweet(contentHarvester *harvester.ContentHarvester, tweet *twitter.Tweet) {
+	r := contentHarvester.HarvestResources(tweet.Text)
+	for _, res := range r.Resources {
+		_, isDestValid := res.IsValid()
+		isIgnored, _ := res.IsIgnored()
+		if isDestValid && !isIgnored {
+			finalURL, _, _ := res.GetURLs()
+			if tweet.Retweeted {
+				fmt.Printf("[@%s <- @%s, %d]: %s (%s)\n", tweet.RetweetedStatus.User.ScreenName, tweet.User.ScreenName, tweet.User.FollowersCount, finalURL.String(), res.DestinationContentType())
+			} else {
+				fmt.Printf("[@%s, %d]: %s (%s)\n", tweet.User.ScreenName, tweet.User.FollowersCount, finalURL.String(), res.DestinationContentType())
+			}
+
+			// TODO move pageInfo as a method of Resource or Harvester, not in main
+			pageInfo, err := og.GetPageInfoFromUrl(finalURL.String())
+			if err == nil {
+				//fmt.Printf("   Site: %s (%s)\n", pageInfo.SiteName, pageInfo.Site)
+				fmt.Printf("  Title: %s\n", pageInfo.Title)
+			}
+		}
+	}
+}
+
 func main() {
 	// TODO add ability to configure hooks or GraphQL subscriptions for outbound event calls
-	var filterTrackItems textList
+	var twitterQuery textList
 	var ignoreURLsRegEx ignoreURLsRegExList
 	var removeParamsFromURLsRegEx cleanURLsRegExList
 
@@ -93,17 +116,23 @@ func main() {
 	consumerSecret := flags.String("consumer-secret", "", "Twitter Consumer Secret")
 	accessToken := flags.String("access-token", "", "Twitter Access Token")
 	accessSecret := flags.String("access-secret", "", "Twitter Access Secret")
-	flags.Var(&filterTrackItems, "twitter-filter-track", "The items to track in Twitter Filter")
+	filterTwitterStream := flags.Bool("filter-stream", false, "Search for content in a continuous Twitter filter (until Ctrl+C is pressed)")
+	searchTwitter := flags.Bool("search", false, "Search for content in Twitter and return results")
+	flags.Var(&twitterQuery, "query", "The items to search in Twitter Filter")
 	flags.Var(&ignoreURLsRegEx, "ignore-urls-reg-ex", "Regular expression indicating which URL patterns to not harvest")
 	flags.Var(&removeParamsFromURLsRegEx, "remove-params-from-urls-reg-ex", "Regular expression indicating which URL query params to 'clean' in harvested URLs")
 	flags.Parse(os.Args[1:])
 	flagutil.SetFlagsFromEnv(flags, "TWITTER")
 
+	if !*filterTwitterStream && !*searchTwitter {
+		log.Fatal("Either filter-stream or search should be specified")
+	}
+
 	if *consumerKey == "" || *consumerSecret == "" || *accessToken == "" || *accessSecret == "" {
 		log.Fatal("Consumer key/secret and Access token/secret required")
 	}
 
-	if len(filterTrackItems) == 0 {
+	if len(twitterQuery) == 0 {
 		log.Fatal("Twitter filter track items required")
 	}
 
@@ -123,35 +152,31 @@ func main() {
 	client := twitter.NewClient(httpClient)
 	contentHarvester := harvester.MakeContentHarvester(ignoreURLsRegEx, removeParamsFromURLsRegEx)
 
+	if *searchTwitter {
+		fmt.Println("Searching...")
+		fmt.Println(twitterQuery)
+		search, _, err := client.Search.Tweets(&twitter.SearchTweetParams{
+			Query: twitterQuery[0],
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+		for _, tweet := range search.Statuses {
+			handleTweet(contentHarvester, &tweet)
+		}
+		return
+	}
+
 	demux := twitter.NewSwitchDemux()
 	demux.Tweet = func(tweet *twitter.Tweet) {
-		r := contentHarvester.HarvestResources(tweet.Text)
-		for _, res := range r.Resources {
-			_, isDestValid := res.IsValid()
-			isIgnored, _ := res.IsIgnored()
-			if isDestValid && !isIgnored {
-				finalURL, _, _ := res.GetURLs()
-				if tweet.Retweeted {
-					fmt.Printf("[@%s <- @%s, %d]: %s (%s)\n", tweet.RetweetedStatus.User.ScreenName, tweet.User.ScreenName, tweet.User.FollowersCount, finalURL.String(), res.DestinationContentType())
-				} else {
-					fmt.Printf("[@%s, %d]: %s (%s)\n", tweet.User.ScreenName, tweet.User.FollowersCount, finalURL.String(), res.DestinationContentType())
-				}
-
-				// TODO move pageInfo as a method of Resource or Harvester, not in main
-				pageInfo, err := og.GetPageInfoFromUrl(finalURL.String())
-				if err == nil {
-					//fmt.Printf("   Site: %s (%s)\n", pageInfo.SiteName, pageInfo.Site)
-					fmt.Printf("  Title: %s\n", pageInfo.Title)
-				}
-			}
-		}
+		handleTweet(contentHarvester, tweet)
 	}
 
 	fmt.Println("Starting Twitter Stream...")
-	fmt.Println(filterTrackItems)
+	fmt.Println(twitterQuery)
 	filterParams := &twitter.StreamFilterParams{
 		// TODO add command line option to read trackers from Lectio Campaign and other sources
-		Track:         filterTrackItems,
+		Track:         twitterQuery,
 		StallWarnings: twitter.Bool(true),
 	}
 	stream, err := client.Streams.Filter(filterParams)
