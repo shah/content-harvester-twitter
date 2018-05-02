@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"regexp"
 	"syscall"
+	"time"
 
 	"github.com/coreos/pkg/flagutil"
 	"github.com/dghubble/go-twitter/twitter"
@@ -83,6 +84,8 @@ func (l cleanURLsRegExList) RemoveQueryParamFromResource(paramName string) (bool
 }
 
 func handleTweet(contentHarvester *harvester.ContentHarvester, tweet *twitter.Tweet) {
+	time := time.Now()
+	fmt.Printf("\r[%s] %s\r", time.Format("01-02 15:04:05"), tweet.Text)
 	r := contentHarvester.HarvestResources(tweet.Text)
 	for _, res := range r.Resources {
 		_, isDestValid := res.IsValid()
@@ -90,16 +93,18 @@ func handleTweet(contentHarvester *harvester.ContentHarvester, tweet *twitter.Tw
 		if isDestValid && !isIgnored {
 			finalURL, _, _ := res.GetURLs()
 			if tweet.Retweeted {
-				fmt.Printf("[@%s <- @%s, %d]: %s (%s)\n", tweet.RetweetedStatus.User.ScreenName, tweet.User.ScreenName, tweet.User.FollowersCount, finalURL.String(), res.DestinationContentType())
+				fmt.Printf("\n[%s] {@%s <- @%s, %d}: %s (%s): ", time.Format("01-02 15:04:05"), tweet.RetweetedStatus.User.ScreenName, tweet.User.ScreenName, tweet.User.FollowersCount, finalURL.String(), res.DestinationContentType())
 			} else {
-				fmt.Printf("[@%s, %d]: %s (%s)\n", tweet.User.ScreenName, tweet.User.FollowersCount, finalURL.String(), res.DestinationContentType())
+				fmt.Printf("\n[%s] {@%s, %d}: %s (%s): ", time.Format("01-02 15:04:05"), tweet.User.ScreenName, tweet.User.FollowersCount, finalURL.String(), res.DestinationContentType())
 			}
 
 			// TODO move pageInfo as a method of Resource or Harvester, not in main
 			pageInfo, err := og.GetPageInfoFromUrl(finalURL.String())
 			if err == nil {
 				//fmt.Printf("   Site: %s (%s)\n", pageInfo.SiteName, pageInfo.Site)
-				fmt.Printf("  Title: %s\n", pageInfo.Title)
+				fmt.Printf("%s\n", pageInfo.Title)
+			} else {
+				fmt.Printf("\n")
 			}
 		}
 	}
