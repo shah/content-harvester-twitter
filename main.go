@@ -116,6 +116,7 @@ func main() {
 	var ignoreURLsRegEx ignoreURLsRegExList
 	var removeParamsFromURLsRegEx cleanURLsRegExList
 
+	// I've created this Twitter App: https://apps.twitter.com/app/15163306
 	flags := flag.NewFlagSet("options", flag.ExitOnError)
 	consumerKey := flags.String("consumer-key", "", "Twitter Consumer Key")
 	consumerSecret := flags.String("consumer-secret", "", "Twitter Consumer Secret")
@@ -177,6 +178,8 @@ func main() {
 		handleTweet(contentHarvester, tweet)
 	}
 
+	// TODO it seems that the stream "dies" after a few hours. I'm not sure if this requires some sort of
+	// auto-restart or another fix but without a fix this utility cannot run as a continuous daemon.
 	fmt.Println("Starting Twitter Stream...")
 	fmt.Println(twitterQuery)
 	filterParams := &twitter.StreamFilterParams{
