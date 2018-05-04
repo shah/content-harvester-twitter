@@ -18,7 +18,12 @@ import (
 	"github.com/shah/content-harvester-utils"
 )
 
+// *** MAJOR TODO ***
+// The Streaming API is being retired in June:
+//   https://blog.twitter.com/developer/en_us/topics/tools/2017/announcing-more-functionality-to-improve-customer-engagements-on-twitter.html
+
 // TODO use http://websocketd.com/ to turn this into a streaming server
+// TODO if using straight HTTP REST (and not GraphQL) consider https://github.com/gorilla/mux
 
 // TODO use https://www.lukemorton.co.uk/thoughts/2017-01-15-deploying-go-on-zeit-now to figure
 // how to run this on Zeit (like Node.js versions)
