@@ -65,7 +65,7 @@
   branch = "master"
   name = "github.com/shah/content-harvester-utils"
   packages = ["."]
-  revision = "f0a57ded3808895b5509a37741d1be186ffc2df6"
+  revision = "4a0e5bfb73ba0c87ccf9dc92283a708fef945182"
 
 [[projects]]
   branch = "master"

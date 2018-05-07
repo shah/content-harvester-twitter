@@ -242,6 +242,18 @@ func main() {
 	demux.Tweet = func(tweet *twitter.Tweet) {
 		createTweetTestData(contentHarvester, csvWriter, tweet)
 	}
+	demux.StreamLimit = func(limit *twitter.StreamLimit) {
+		fmt.Printf("Stream limit track %d\n", limit.Track)
+	}
+	demux.StreamDisconnect = func(disconnect *twitter.StreamDisconnect) {
+		fmt.Printf("Disconnected: %d, '%s' %s\n", disconnect.Code, disconnect.StreamName, disconnect.Reason)
+	}
+	demux.Warning = func(warning *twitter.StallWarning) {
+		fmt.Printf("Stall warning: pct full: %d, code: %s, %s\n", warning.PercentFull, warning.Code, warning.Message)
+	}
+	demux.Other = func(message interface{}) {
+		fmt.Printf("Received other message: %s\n", message)
+	}
 
 	// TODO it seems that the stream "dies" after a few hours. I'm not sure if this requires some sort of
 	// auto-restart or another fix but without a fix this utility cannot run as a continuous daemon.
