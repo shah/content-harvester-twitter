@@ -93,6 +93,15 @@ func (l cleanURLsRegExList) RemoveQueryParamFromResource(paramName string) (bool
 	return false, ""
 }
 
+func resourceToString(hr *harvester.HarvestedResource) string {
+	if hr == nil {
+		return ""
+	}
+
+	referrerURL, _, _ := hr.GetURLs()
+	return urlToString(referrerURL)
+}
+
 func urlToString(url *url.URL) string {
 	if url == nil {
 		return ""
@@ -122,11 +131,11 @@ func createTweetTestData(contentHarvester *harvester.ContentHarvester, csvWriter
 		finalURL, resolvedURL, cleanedURL := res.GetURLs()
 		isIgnored, ignoreReason := res.IsIgnored()
 		if isIgnored {
-			csvWriter.Write([]string{tweet.IDStr, tweetText, time, res.OriginalURLText(), "Ignored", ignoreReason, urlToString(finalURL), urlToString(resolvedURL)})
+			csvWriter.Write([]string{tweet.IDStr, tweetText, time, res.OriginalURLText(), "Ignored", ignoreReason, resourceToString(res.ReferredByResource()), urlToString(finalURL), urlToString(resolvedURL)})
 			continue
 		}
 
-		csvWriter.Write([]string{tweet.IDStr, tweetText, time, res.OriginalURLText(), "Resolved", "Success", urlToString(finalURL), urlToString(resolvedURL), urlToString(cleanedURL)})
+		csvWriter.Write([]string{tweet.IDStr, tweetText, time, res.OriginalURLText(), "Resolved", "Success", resourceToString(res.ReferredByResource()), urlToString(finalURL), urlToString(resolvedURL), urlToString(cleanedURL)})
 	}
 	csvWriter.Flush()
 }
@@ -213,7 +222,7 @@ func main() {
 		os.Exit(1)
 	}
 	csvWriter := csv.NewWriter(file)
-	csvWriter.Write([]string{"Tweet ID", "Tweet", "Time", "Original URL", "Finding", "Reason", "Final URL", "Resolved URL", "Cleaned URL"})
+	csvWriter.Write([]string{"Tweet ID", "Tweet", "Time", "Original URL", "Finding", "Reason", "Referrer", "Final URL", "Resolved URL", "Cleaned URL"})
 
 	if *searchTwitter {
 		fmt.Printf("Searching Twitter: %s in %s...\n", twitterQuery, *createTestDataFileName)
