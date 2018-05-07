@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"log"
@@ -31,6 +32,8 @@ import (
 type textList []string
 type ignoreURLsRegExList []*regexp.Regexp
 type cleanURLsRegExList []*regexp.Regexp
+
+var removeNewLinesRegEx = regexp.MustCompile(`\r?\n`)
 
 func (i *textList) String() string {
 	return ""
@@ -90,7 +93,45 @@ func (l cleanURLsRegExList) RemoveQueryParamFromResource(paramName string) (bool
 	return false, ""
 }
 
-func handleTweet(contentHarvester *harvester.ContentHarvester, tweet *twitter.Tweet) {
+func urlToString(url *url.URL) string {
+	if url == nil {
+		return ""
+	}
+	return url.String()
+}
+
+func createTweetTestData(contentHarvester *harvester.ContentHarvester, csvWriter *csv.Writer, tweet *twitter.Tweet) {
+	time := time.Now().Format("01-02 15:04:05")
+	r := contentHarvester.HarvestResources(tweet.Text)
+	tweetText := removeNewLinesRegEx.ReplaceAllString(tweet.Text, " ")
+	for _, res := range r.Resources {
+		isURLValid, isDestValid := res.IsValid()
+		if !isURLValid {
+			csvWriter.Write([]string{tweet.IDStr, tweetText, time, res.OriginalURLText(), "Invalid URL", "Not sure why"})
+			continue
+		}
+		if !isDestValid {
+			isIgnored, ignoreReason := res.IsIgnored()
+			if isIgnored {
+				csvWriter.Write([]string{tweet.IDStr, tweetText, time, res.OriginalURLText(), "Invalid URL Destination", ignoreReason})
+			} else {
+				csvWriter.Write([]string{tweet.IDStr, tweetText, time, res.OriginalURLText(), "Invalid URL Destination", "Unknown reason"})
+			}
+			continue
+		}
+		finalURL, resolvedURL, cleanedURL := res.GetURLs()
+		isIgnored, ignoreReason := res.IsIgnored()
+		if isIgnored {
+			csvWriter.Write([]string{tweet.IDStr, tweetText, time, res.OriginalURLText(), "Ignored", ignoreReason, urlToString(finalURL), urlToString(resolvedURL)})
+			continue
+		}
+
+		csvWriter.Write([]string{tweet.IDStr, tweetText, time, res.OriginalURLText(), "Resolved", "Success", urlToString(finalURL), urlToString(resolvedURL), urlToString(cleanedURL)})
+	}
+	csvWriter.Flush()
+}
+
+func handleTweetLegacy(contentHarvester *harvester.ContentHarvester, tweet *twitter.Tweet) {
 	time := time.Now()
 	fmt.Printf("\r[%s] %s\r", time.Format("01-02 15:04:05"), tweet.Text)
 	r := contentHarvester.HarvestResources(tweet.Text)
@@ -131,6 +172,7 @@ func main() {
 	accessSecret := flags.String("access-secret", "", "Twitter Access Secret")
 	filterTwitterStream := flags.Bool("filter-stream", false, "Search for content in a continuous Twitter filter (until Ctrl+C is pressed)")
 	searchTwitter := flags.Bool("search", false, "Search for content in Twitter and return results")
+	createTestDataFileName := flags.String("create-test-data", fmt.Sprintf("./test-data-%s.csv", time.Now().Format("2006-01-02-15-04-05")), "Name of CSV file to generate test data from output")
 	flags.Var(&twitterQuery, "query", "The items to search in Twitter Filter")
 	flags.Var(&ignoreURLsRegEx, "ignore-urls-reg-ex", "Regular expression indicating which URL patterns to not harvest")
 	flags.Var(&removeParamsFromURLsRegEx, "remove-params-from-urls-reg-ex", "Regular expression indicating which URL query params to 'clean' in harvested URLs")
@@ -163,11 +205,18 @@ func main() {
 	httpClient := config.Client(oauth1.NoContext, token)
 
 	client := twitter.NewClient(httpClient)
-	contentHarvester := harvester.MakeContentHarvester(ignoreURLsRegEx, removeParamsFromURLsRegEx)
+	contentHarvester := harvester.MakeContentHarvester(ignoreURLsRegEx, removeParamsFromURLsRegEx, true)
+	file, err := os.OpenFile(*createTestDataFileName, os.O_CREATE|os.O_WRONLY, 0777)
+	defer file.Close()
+	if err != nil {
+		fmt.Printf("Unable to create %s\n", *createTestDataFileName)
+		os.Exit(1)
+	}
+	csvWriter := csv.NewWriter(file)
+	csvWriter.Write([]string{"Tweet ID", "Tweet", "Time", "Original URL", "Finding", "Reason", "Final URL", "Resolved URL", "Cleaned URL"})
 
 	if *searchTwitter {
-		fmt.Println("Searching...")
-		fmt.Println(twitterQuery)
+		fmt.Printf("Searching Twitter: %s in %s...\n", twitterQuery, *createTestDataFileName)
 		search, _, err := client.Search.Tweets(&twitter.SearchTweetParams{
 			Query: twitterQuery[0],
 		})
@@ -175,20 +224,19 @@ func main() {
 			log.Fatal(err)
 		}
 		for _, tweet := range search.Statuses {
-			handleTweet(contentHarvester, &tweet)
+			createTweetTestData(contentHarvester, csvWriter, &tweet)
 		}
 		return
 	}
 
 	demux := twitter.NewSwitchDemux()
 	demux.Tweet = func(tweet *twitter.Tweet) {
-		handleTweet(contentHarvester, tweet)
+		createTweetTestData(contentHarvester, csvWriter, tweet)
 	}
 
 	// TODO it seems that the stream "dies" after a few hours. I'm not sure if this requires some sort of
 	// auto-restart or another fix but without a fix this utility cannot run as a continuous daemon.
-	fmt.Println("Starting Twitter Stream...")
-	fmt.Println(twitterQuery)
+	fmt.Printf("Starting Twitter Stream: %s in %s...\n", twitterQuery, *createTestDataFileName)
 	filterParams := &twitter.StreamFilterParams{
 		// TODO add command line option to read trackers from Lectio Campaign and other sources
 		Track:         twitterQuery,
