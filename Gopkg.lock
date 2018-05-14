@@ -2,16 +2,22 @@
 
 
 [[projects]]
-  name = "github.com/PuerkitoBio/goquery"
+  name = "github.com/ChimeraCoder/anaconda"
   packages = ["."]
-  revision = "a86ea073017a6beddef78c8659e7224e8ca634b0"
-  version = "v1.4.0"
+  revision = "9c68684170b980d5b4c2ed08fae9b530e659904d"
+  version = "v2.0.0"
 
 [[projects]]
-  name = "github.com/andybalholm/cascadia"
+  branch = "master"
+  name = "github.com/ChimeraCoder/tokenbucket"
   packages = ["."]
-  revision = "901648c87902174f774fac311d7f176f8647bdaa"
-  version = "v1.0.0"
+  revision = "c5a927568de7aad8a58127d80bcd36ca4e71e454"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/azr/backoff"
+  packages = ["."]
+  revision = "53511d3c733003985b0b76f733df1f4d0095ee6a"
 
 [[projects]]
   name = "github.com/cenkalti/backoff"
@@ -32,12 +38,6 @@
   revision = "c4115fa44a928413e0b857e0eb47376ffde3a61a"
 
 [[projects]]
-  name = "github.com/dghubble/oauth1"
-  packages = ["."]
-  revision = "70562a5920ad9b6ff03ef697c0f90ae569abbd2b"
-  version = "v0.4.0"
-
-[[projects]]
   name = "github.com/dghubble/sling"
   packages = ["."]
   revision = "eb56e89ac5088bebb12eef3cb4b293300f43608b"
@@ -45,21 +45,27 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/dustin/go-jsonpointer"
+  packages = ["."]
+  revision = "ba0abeacc3dcca5b9b20f31509c46794edbc9965"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/dustin/gojson"
+  packages = ["."]
+  revision = "2e71ec9dd5adce3b168cd0dbde03b5cc04951c30"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/garyburd/go-oauth"
+  packages = ["oauth"]
+  revision = "bca2e7f09a178fd36b034107a00e2323bca6a82e"
+
+[[projects]]
+  branch = "master"
   name = "github.com/google/go-querystring"
   packages = ["query"]
   revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/julianshen/go-readability"
-  packages = ["."]
-  revision = "accf5123e28378bd35e0a92815d24a8990352fcb"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/julianshen/og"
-  packages = ["."]
-  revision = "897162c55567bfbb909b098a0e9e936bcea983af"
 
 [[projects]]
   branch = "master"
@@ -86,6 +92,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "21721adede2b5b3a66207ed650a1edc3c2b74a12cc63ed5158909960950b6716"
+  inputs-digest = "c11f31c31099725c6bdabc2fab78f2a2e1f1001f446715537297184175f75606"
   solver-name = "gps-cdcl"
   solver-version = 1
