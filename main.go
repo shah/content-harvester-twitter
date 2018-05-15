@@ -150,7 +150,7 @@ func main() {
 	accessSecret := flags.String("access-secret", "", "Twitter Access Secret")
 	filterTwitterStream := flags.Bool("filter-stream", false, "Search for content in a continuous Twitter filter (until Ctrl+C is pressed)")
 	searchTwitter := flags.Bool("search", false, "Search for content in Twitter and return results")
-	createTestDataFileName := flags.String("create-test-data", fmt.Sprintf("./test-data-%s.csv", time.Now().Format("2006-01-02-15-04-05")), "Name of CSV file to generate test data from output")
+	createTestDataFileName := flags.String("create-test-data", fmt.Sprintf("./tmp/test-data-%s.csv", time.Now().Format("2006-01-02-15-04-05")), "Name of CSV file to generate test data from output")
 	flags.Var(&twitterQuery, "query", "The items to search in Twitter Filter")
 	flags.Var(&ignoreURLsRegEx, "ignore-urls-reg-ex", "Regular expression indicating which URL patterns to not harvest")
 	flags.Var(&removeParamsFromURLsRegEx, "remove-params-from-urls-reg-ex", "Regular expression indicating which URL query params to 'clean' in harvested URLs")
@@ -183,7 +183,7 @@ func main() {
 	file, err := os.OpenFile(*createTestDataFileName, os.O_CREATE|os.O_WRONLY, 0777)
 	defer file.Close()
 	if err != nil {
-		fmt.Printf("Unable to create %s\n", *createTestDataFileName)
+		fmt.Printf("Unable to create %s, does its directory exist?\n", *createTestDataFileName)
 		os.Exit(1)
 	}
 	csvWriter := csv.NewWriter(file)
