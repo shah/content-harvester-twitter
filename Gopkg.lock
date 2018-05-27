@@ -14,34 +14,34 @@
   revision = "c5a927568de7aad8a58127d80bcd36ca4e71e454"
 
 [[projects]]
+  name = "github.com/Machiel/slugify"
+  packages = ["."]
+  revision = "d7f9bcd23b5963c8cf57acbce25b9fec17897c61"
+  version = "v1.0.1"
+
+[[projects]]
+  name = "github.com/PuerkitoBio/goquery"
+  packages = ["."]
+  revision = "a86ea073017a6beddef78c8659e7224e8ca634b0"
+  version = "v1.4.0"
+
+[[projects]]
+  name = "github.com/andybalholm/cascadia"
+  packages = ["."]
+  revision = "901648c87902174f774fac311d7f176f8647bdaa"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/azr/backoff"
   packages = ["."]
   revision = "53511d3c733003985b0b76f733df1f4d0095ee6a"
 
 [[projects]]
-  name = "github.com/cenkalti/backoff"
-  packages = ["."]
-  revision = "2ea60e5f094469f9e65adb9cd103795b73ae743e"
-  version = "v2.0.0"
-
-[[projects]]
   name = "github.com/coreos/pkg"
   packages = ["flagutil"]
   revision = "3ac0863d7acf3bc44daf49afef8919af12f704ef"
   version = "v3"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/dghubble/go-twitter"
-  packages = ["twitter"]
-  revision = "c4115fa44a928413e0b857e0eb47376ffde3a61a"
-
-[[projects]]
-  name = "github.com/dghubble/sling"
-  packages = ["."]
-  revision = "eb56e89ac5088bebb12eef3cb4b293300f43608b"
-  version = "v1.1.0"
 
 [[projects]]
   branch = "master"
@@ -57,21 +57,76 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/ericaro/frontmatter"
+  packages = ["."]
+  revision = "9fedef9406e420da012d078cd83645bbac08f291"
+
+[[projects]]
+  branch = "master"
   name = "github.com/garyburd/go-oauth"
   packages = ["oauth"]
   revision = "bca2e7f09a178fd36b034107a00e2323bca6a82e"
 
 [[projects]]
   branch = "master"
-  name = "github.com/google/go-querystring"
-  packages = ["query"]
-  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
+  name = "github.com/google/btree"
+  packages = ["."]
+  revision = "e89373fe6b4a7413d7acd6da1725b83ef713e6e4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/julianshen/go-readability"
+  packages = ["."]
+  revision = "accf5123e28378bd35e0a92815d24a8990352fcb"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/julianshen/og"
+  packages = ["."]
+  revision = "897162c55567bfbb909b098a0e9e936bcea983af"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/petar/GoLLRB"
+  packages = ["llrb"]
+  revision = "53be0d36a84c2a886ca057d34b6aa4468df9ccb4"
+
+[[projects]]
+  name = "github.com/peterbourgon/diskv"
+  packages = ["."]
+  revision = "5f041e8faa004a95c88a202771f4cc3e991971e6"
+  version = "v2.0.1"
 
 [[projects]]
   branch = "master"
   name = "github.com/shah/content-harvester-utils"
   packages = ["."]
-  revision = "4a0e5bfb73ba0c87ccf9dc92283a708fef945182"
+  revision = "d223f9a4ce43caa5a0bc87d0948eb4f443ba8c5b"
+
+[[projects]]
+  name = "go.uber.org/atomic"
+  packages = ["."]
+  revision = "1ea20fb1cbb1cc08cbd0d913a96dead89aa18289"
+  version = "v1.3.2"
+
+[[projects]]
+  name = "go.uber.org/multierr"
+  packages = ["."]
+  revision = "3c4937480c32f4c13a875a1829af76c98ca3d40a"
+  version = "v1.1.0"
+
+[[projects]]
+  name = "go.uber.org/zap"
+  packages = [
+    ".",
+    "buffer",
+    "internal/bufferpool",
+    "internal/color",
+    "internal/exit",
+    "zapcore"
+  ]
+  revision = "eeedf312bc6c57391d84767a4cd413f02a917974"
+  version = "v1.8.0"
 
 [[projects]]
   branch = "master"
@@ -81,7 +136,13 @@
     "html",
     "html/atom"
   ]
-  revision = "640f4622ab692b87c2f3a94265e6f579fe38263d"
+  revision = "dfa909b99c79129e1100513e5cd36307665e5723"
+
+[[projects]]
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [[projects]]
   name = "mvdan.cc/xurls"
@@ -92,6 +153,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c11f31c31099725c6bdabc2fab78f2a2e1f1001f446715537297184175f75606"
+  inputs-digest = "52f4d2b927f0f33e24bcad9d383a63f04552211e22ac36414c112f419684b2b0"
   solver-name = "gps-cdcl"
   solver-version = 1
