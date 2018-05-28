@@ -57,12 +57,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/ericaro/frontmatter"
-  packages = ["."]
-  revision = "9fedef9406e420da012d078cd83645bbac08f291"
-
-[[projects]]
-  branch = "master"
   name = "github.com/garyburd/go-oauth"
   packages = ["oauth"]
   revision = "bca2e7f09a178fd36b034107a00e2323bca6a82e"
@@ -101,7 +95,7 @@
   branch = "master"
   name = "github.com/shah/content-harvester-utils"
   packages = ["."]
-  revision = "d223f9a4ce43caa5a0bc87d0948eb4f443ba8c5b"
+  revision = "fff3ca3b895389d355892144b0aacb05aebcf950"
 
 [[projects]]
   name = "go.uber.org/atomic"
@@ -139,10 +133,14 @@
   revision = "dfa909b99c79129e1100513e5cd36307665e5723"
 
 [[projects]]
-  name = "gopkg.in/yaml.v2"
-  packages = ["."]
-  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
+  name = "gopkg.in/h2non/filetype.v1"
+  packages = [
+    ".",
+    "matchers",
+    "types"
+  ]
+  revision = "cc14fdc9ca0e4c2bafad7458f6ff79fd3947cfbb"
+  version = "v1.0.5"
 
 [[projects]]
   name = "mvdan.cc/xurls"
@@ -153,6 +151,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "52f4d2b927f0f33e24bcad9d383a63f04552211e22ac36414c112f419684b2b0"
+  inputs-digest = "ad9ff07a40231920be8c1fc13cf7c6de445f7d24db529056fe569809f4ab1dd0"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -4,15 +4,17 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/url"
 	"os"
 	"regexp"
+	"strings"
+	"text/template"
 	"time"
 
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/coreos/pkg/flagutil"
-	"github.com/ericaro/frontmatter"
 	"github.com/peterbourgon/diskv"
 	"github.com/shah/content-harvester-utils"
 	"go.uber.org/zap"
@@ -24,66 +26,30 @@ type HarvestedResourceStorage struct {
 	diskv            *diskv.Diskv
 	logger           *zap.Logger
 	contentHarvester *harvester.ContentHarvester
+	markdown         map[*harvester.HarvestedResourceKeys]*strings.Builder
+	serializer       harvester.HarvestedResourcesSerializer
 }
 
 // SaveAllInText all harvested resources into the database
 func (storage *HarvestedResourceStorage) SaveAllInText(text string) {
 	r := storage.contentHarvester.HarvestResources(text)
-	for _, res := range r.Resources {
-		isURLValid, isDestValid := res.IsValid()
-		if !isURLValid {
-			storage.logger.Info("Invalid URL", zap.String("source", text),
+
+	storage.markdown = make(map[*harvester.HarvestedResourceKeys]*strings.Builder)
+	r.Serialize(storage.serializer)
+
+	for keys, markdown := range storage.markdown {
+		res := keys.HarvestedResource()
+		ignored, why := res.IsIgnored()
+		if ignored {
+			storage.logger.Error("Why is ignored showing up?",
+				zap.String("source", text),
 				zap.String("originalURLText", res.OriginalURLText()),
-				zap.String("reason", "Not sure why"),
-			)
+				zap.String("reason", why))
 			continue
 		}
-		if !isDestValid {
-			isIgnored, ignoreReason := res.IsIgnored()
-			if isIgnored {
-				storage.logger.Info("Invalid URL Destination", zap.String("source", text),
-					zap.String("originalURLText", res.OriginalURLText()),
-					zap.String("reason", ignoreReason),
-				)
-			} else {
-				storage.logger.Info("Invalid URL Destination", zap.String("source", text),
-					zap.String("originalURLText", res.OriginalURLText()),
-					zap.String("reason", "Unknown reason"),
-				)
-			}
-			continue
-		}
+
 		finalURL, resolvedURL, cleanedURL := res.GetURLs()
-		isIgnored, ignoreReason := res.IsIgnored()
-		if isIgnored {
-			storage.logger.Info("Ignored", zap.String("source", text),
-				zap.String("originalURLText", res.OriginalURLText()),
-				zap.String("reason", ignoreReason),
-				zap.String("referredBy", resourceToString(res.ReferredByResource())),
-				zap.String("finalURL", urlToString(finalURL)),
-				zap.String("resolvedURL", urlToString(resolvedURL)),
-			)
-			continue
-		}
-
-		keys := harvester.CreateKeys(res)
-		frontMatter := struct {
-			Slug    string `yaml:"slug"`
-			OrigURL string `yaml:"origURL"`
-			Content string `fm:"content" yaml:"-"`
-		}{
-			Slug:    keys.Slug(),
-			OrigURL: res.OriginalURLText(),
-			Content: text,
-		}
-
-		data, err := frontmatter.Marshal(frontMatter)
-		if err != nil {
-			fmt.Printf("err! %s", err.Error())
-		}
-		storage.diskv.Write(keys.Slug(), data)
-
-		storage.logger.Info("Saved", zap.String("source", text),
+		storage.logger.Info("Saving", zap.String("source", text),
 			zap.String("originalURLText", res.OriginalURLText()),
 			zap.String("slug", keys.Slug()),
 			zap.String("referredBy", resourceToString(res.ReferredByResource())),
@@ -91,7 +57,73 @@ func (storage *HarvestedResourceStorage) SaveAllInText(text string) {
 			zap.String("resolvedURL", urlToString(resolvedURL)),
 			zap.String("cleanedURL", urlToString(cleanedURL)),
 		)
+
+		storage.diskv.Write(keys.Slug(), []byte(markdown.String()))
 	}
+
+	// for _, res := range r.Resources {
+	// 	isURLValid, isDestValid := res.IsValid()
+	// 	if !isURLValid {
+	// 		storage.logger.Info("Invalid URL", zap.String("source", text),
+	// 			zap.String("originalURLText", res.OriginalURLText()),
+	// 			zap.String("reason", "Not sure why"),
+	// 		)
+	// 		continue
+	// 	}
+	// 	if !isDestValid {
+	// 		isIgnored, ignoreReason := res.IsIgnored()
+	// 		if isIgnored {
+	// 			storage.logger.Info("Invalid URL Destination", zap.String("source", text),
+	// 				zap.String("originalURLText", res.OriginalURLText()),
+	// 				zap.String("reason", ignoreReason),
+	// 			)
+	// 		} else {
+	// 			storage.logger.Info("Invalid URL Destination", zap.String("source", text),
+	// 				zap.String("originalURLText", res.OriginalURLText()),
+	// 				zap.String("reason", "Unknown reason"),
+	// 			)
+	// 		}
+	// 		continue
+	// 	}
+	// 	finalURL, resolvedURL, cleanedURL := res.GetURLs()
+	// 	isIgnored, ignoreReason := res.IsIgnored()
+	// 	if isIgnored {
+	// 		storage.logger.Info("Ignored", zap.String("source", text),
+	// 			zap.String("originalURLText", res.OriginalURLText()),
+	// 			zap.String("reason", ignoreReason),
+	// 			zap.String("referredBy", resourceToString(res.ReferredByResource())),
+	// 			zap.String("finalURL", urlToString(finalURL)),
+	// 			zap.String("resolvedURL", urlToString(resolvedURL)),
+	// 		)
+	// 		continue
+	// 	}
+
+	// 	keys := harvester.CreateKeys(res)
+	// 	frontMatter := struct {
+	// 		Slug    string `yaml:"slug"`
+	// 		OrigURL string `yaml:"origURL"`
+	// 		Content string `fm:"content" yaml:"-"`
+	// 	}{
+	// 		Slug:    keys.Slug(),
+	// 		OrigURL: res.OriginalURLText(),
+	// 		Content: text,
+	// 	}
+
+	// 	data, err := frontmatter.Marshal(frontMatter)
+	// 	if err != nil {
+	// 		fmt.Printf("err! %s", err.Error())
+	// 	}
+	// 	storage.diskv.Write(keys.Slug(), data)
+
+	// 	storage.logger.Info("Saved", zap.String("source", text),
+	// 		zap.String("originalURLText", res.OriginalURLText()),
+	// 		zap.String("slug", keys.Slug()),
+	// 		zap.String("referredBy", resourceToString(res.ReferredByResource())),
+	// 		zap.String("finalURL", urlToString(finalURL)),
+	// 		zap.String("resolvedURL", urlToString(resolvedURL)),
+	// 		zap.String("cleanedURL", urlToString(cleanedURL)),
+	// 	)
+	// }
 }
 
 // NewHarvestedResourceStorage that can persist harvested resources
@@ -100,6 +132,10 @@ func NewHarvestedResourceStorage(contentHarvester *harvester.ContentHarvester, l
 	result.contentHarvester = contentHarvester
 	result.logger = logger
 	result.basePath = basePath
+	tmpl, tmplErr := template.ParseFiles("../content-harvester-utils/serialize.md.tmpl")
+	if tmplErr != nil {
+		panic(tmplErr)
+	}
 
 	// Simplest transform function: put all the data files into the base dir.
 	flatTransform := func(s string) []string { return []string{} }
@@ -111,6 +147,32 @@ func NewHarvestedResourceStorage(contentHarvester *harvester.ContentHarvester, l
 		CacheSizeMax: 1024 * 1024,
 	})
 
+	result.serializer = harvester.HarvestedResourcesSerializer{
+		GetKeys: func(hr *harvester.HarvestedResource) *harvester.HarvestedResourceKeys {
+			return harvester.CreateHarvestedResourceKeys(hr, func(random uint32, try int) bool {
+				return false
+			})
+		},
+		GetTemplate: func(keys *harvester.HarvestedResourceKeys) (*template.Template, error) {
+			return tmpl, nil
+		},
+		GetTemplateParams: func(keys *harvester.HarvestedResourceKeys) *map[string]interface{} {
+			result := make(map[string]interface{})
+			result["ProvenanceType"] = "tweet"
+			return &result
+		},
+		GetWriter: func(keys *harvester.HarvestedResourceKeys) io.Writer {
+			markdown, found := result.markdown[keys]
+			if !found {
+				markdown = new(strings.Builder)
+				result.markdown[keys] = markdown
+			}
+			return markdown
+		},
+		HandleInvalidURL:     nil,
+		HandleInvalidURLDest: nil,
+		HandleIgnoredURL:     nil,
+	}
 	return result
 }
 
@@ -282,7 +344,7 @@ func main() {
 	}
 	defer logger.Sync()
 
-	contentHarvester := harvester.MakeContentHarvester(ignoreURLsRegEx, removeParamsFromURLsRegEx, true)
+	contentHarvester := harvester.MakeContentHarvester(logger, ignoreURLsRegEx, removeParamsFromURLsRegEx, true)
 	storage := NewHarvestedResourceStorage(contentHarvester, logger, *storageBasePath)
 	twitterAPI := anaconda.NewTwitterApiWithCredentials(*accessToken, *accessSecret, *consumerKey, *consumerSecret)
 
